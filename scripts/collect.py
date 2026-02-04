@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from pynput import keyboard
 import argparse
+from datetime import datetime
 
 from controller import Controller
 from steer_labels import LABELS, steering_to_class
@@ -47,6 +48,7 @@ print("GO!")
 angle = 0
 label = 2
 im_number = args.im_num
+write_images = False
 continue_running = True
 controller = Controller()
 
@@ -67,6 +69,13 @@ def on_press(key):
         elif key == keyboard.Key.esc:
             print("Stopping script")
             continue_running = False
+        elif key == keyboard.Key.c:
+            print("Toggle write images")
+            write_images = not write_images
+            if write_images:
+                print("Writing images to folder")
+            else:
+                print("Not writing images to folder")
 
         angle = clamp_angle(angle)
         label = steering_to_class(angle)
@@ -79,6 +88,10 @@ def on_press(key):
 listener = keyboard.Listener(on_press=on_press)
 listener.start()
 
+# append datetime to folder name
+datetime_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+folder = args.folder + '/' + datetime_str
+
 try:
     while continue_running:
         # Get an image from the robot
@@ -89,18 +102,9 @@ try:
 
         bot.setVelocity(left, right)
 
-        label_name = LABELS[label]
-        cv2.imwrite(
-            script_path
-            + "/../data/"
-            + args.folder
-            + "/"
-            + str(im_number).zfill(6)
-            + "_"
-            + label_name
-            + ".jpg",
-            img,
-        )
+        if write_images:
+            filename = folder + '/' + str(im_number).zfill(6) + str(angle) + '.jpg'
+            cv2.imwrite(filename, img)
         im_number += 1
 
         time.sleep(0.1)  # Small delay to reduce CPU usage
