@@ -56,7 +56,7 @@ script_path = os.path.dirname(os.path.realpath(__file__))
 ###################
 
 #full_ds = SteerDataSet(os.path.join(script_path, '..', 'data', 'train_starter'), '.jpg', transform)
-full_ds = SteerDataSet(os.path.join(script_path, '..', 'data', 'train','string_label'), '.jpg', transform)
+full_ds = SteerDataSet(os.path.join(script_path, '..', 'train'), '.jpg', transform)
 print("The full dataset contains %d images " % len(full_ds))
 
 # Split dataset into train (60%), test (20%), and validation (20%)
@@ -150,7 +150,7 @@ class Net(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
 
         self.fc1 = nn.Linear(1344, 256)
-        self.fc2 = nn.Linear(256, 5)
+        self.fc2 = nn.Linear(256, 7)
 
         self.relu = nn.ReLU()
 

@@ -1,30 +1,39 @@
 LABELS = [
+    "uleft"
     "sharpleft",
     "left",
     "straight",
     "right",
     "sharpright",
+    "uright"
 ]
 
 LABEL_TO_ANGLE = {
-    0: -0.5,
-    1: -0.2,
-    2: 0.0,
-    3: 0.2,
-    4: 0.5,
+    0: -1,
+    1: -0.7,
+    2: -0.3,
+    3: 0.0,
+    4: 0.3,
+    5: 0.7,
+    6: 1
 }
 
 
 def steering_to_class(steering):
-    if steering <= -0.2:
+    if steering < -0.7:
         return 0
-    if steering < 0:
+    if steering < -0.3:
         return 1
-    if steering == 0:
+    if steering < 0:
         return 2
-    if steering < 0.2:
+    if steering == 0:
         return 3
-    return 4
+    if steering < 0.3:
+        return 4
+    if steering < 0.8:
+        return 5
+
+    return 6
 
 
 def label_to_class(label):

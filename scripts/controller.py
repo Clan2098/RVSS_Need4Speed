@@ -4,8 +4,8 @@ from steer_limits import MAX_ANGLE_ABS, MAX_WHEEL_SPEED, clamp_angle, clamp_whee
 class Controller:
     def __init__(
         self,
-        base_speed=10,
-        turn_gain=20,
+        base_speed=20,
+        turn_gain=40,
         angle_smoothing=0.2,
         max_angle_abs=MAX_ANGLE_ABS,
         max_wheel_speed=MAX_WHEEL_SPEED,

@@ -53,7 +53,7 @@ continue_running = True
 controller = Controller()
 
 def on_press(key):
-    global angle, label, continue_running
+    global angle, label, continue_running, write_images
     try:
         if key == keyboard.Key.up:
             angle = 0
@@ -69,7 +69,7 @@ def on_press(key):
         elif key == keyboard.Key.esc:
             print("Stopping script")
             continue_running = False
-        elif key == keyboard.Key.c:
+        elif key.char == 'c':
             print("Toggle write images")
             write_images = not write_images
             if write_images:
@@ -91,6 +91,7 @@ listener.start()
 # append datetime to folder name
 datetime_str = datetime.now().strftime("%Y%m%d_%H%M%S")
 folder = args.folder + '/' + datetime_str
+os.makedirs(folder)
 
 try:
     while continue_running:
