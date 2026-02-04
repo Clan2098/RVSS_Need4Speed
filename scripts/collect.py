@@ -46,7 +46,7 @@ print("GO!")
 
 # Initialize variables
 angle = 0
-label = 2
+label = 3
 im_number = args.im_num
 write_images = False
 continue_running = True
@@ -60,9 +60,9 @@ def on_press(key):
         elif key == keyboard.Key.down:
             angle = 0
         elif key == keyboard.Key.right:
-            angle += 0.2
+            angle += 0.1
         elif key == keyboard.Key.left:
-            angle -= 0.2
+            angle -= 0.1
         elif key == keyboard.Key.space:
             print("Toggle stop")
             controller.toggle_stop()
@@ -100,6 +100,7 @@ try:
         
         left, right = controller(label)
         controller_angle = controller.angle
+        print(left, right, angle, controller_angle)
 
         bot.setVelocity(left, right)
 
