@@ -179,7 +179,7 @@ net = Net()
 criterion = nn.CrossEntropyLoss()
 #You could use also ADAM
 # optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-optimizer = optim.Adam(net.parameters(), lr=0.0002)
+optimizer = optim.Adam(net.parameters(), lr=0.0001)
 
 
 #######################################################################################################################################
@@ -188,7 +188,7 @@ optimizer = optim.Adam(net.parameters(), lr=0.0002)
 losses = {'train': [], 'val': []}
 accs = {'train': [], 'val': []}
 best_acc = 0
-for epoch in range(20):  # loop over the dataset multiple times
+for epoch in range(30):  # loop over the dataset multiple times
 
     epoch_loss = 0.0
     correct = 0
@@ -276,7 +276,7 @@ correct = 0
 total = 0
 # since we're not training, we don't need to calculate the gradients for our outputs
 with torch.no_grad():
-    for data in valloader:
+    for data in testloader:
         images, labels = data
         # calculate outputs by running images through the network
         outputs = net(images)
@@ -296,7 +296,7 @@ total_pred = {classname: 0 for classname in full_ds.class_labels}
 actual = []
 predicted = []
 with torch.no_grad():
-    for data in valloader:
+    for data in testloader:
         images, labels = data
         outputs = net(images)
         _, predictions = torch.max(outputs, 1)
