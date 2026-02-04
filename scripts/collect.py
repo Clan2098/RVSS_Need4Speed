@@ -7,6 +7,10 @@ import numpy as np
 from pynput import keyboard
 import argparse
 
+from controller import Controller
+from steer_labels import LABELS, steering_to_class
+from steer_limits import clamp_angle
+
 script_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.abspath(os.path.join(script_path, "../PenguinPi-robot/software/python/client/")))
 from pibot_client import PiBot
@@ -23,8 +27,8 @@ if not os.path.exists(script_path+"/../data/"+args.folder):
     exit()
 
 bot = PiBot(ip=args.ip)
-# stop the robot
 
+# stop the robot
 bot.setVelocity(0, 0)
 
 #countdown before beginning
@@ -41,28 +45,31 @@ print("GO!")
 
 # Initialize variables
 angle = 0
+label = 2
 im_number = args.im_num
 continue_running = True
+controller = Controller()
 
 def on_press(key):
-    global angle, continue_running
+    global angle, label, continue_running
     try:
         if key == keyboard.Key.up:
             angle = 0
-            print("straight")
         elif key == keyboard.Key.down:
             angle = 0
         elif key == keyboard.Key.right:
-            print("right")
-            angle += 0.1
+            angle += 0.2
         elif key == keyboard.Key.left:
-            print("left")
-            angle -= 0.1
+            angle -= 0.2
         elif key == keyboard.Key.space:
-            print("stop")
-            bot.setVelocity(0, 0)
+            print("Toggle stop")
+            controller.toggle_stop()
+        elif key == keyboard.Key.esc:
+            print("Stopping script")
             continue_running = False
-            # return False  # Stop listener
+
+        angle = clamp_angle(angle)
+        label = steering_to_class(angle)
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -77,15 +84,23 @@ try:
         # Get an image from the robot
         img = bot.getImage()
         
-        angle = np.clip(angle, -0.5, 0.5)
-        Kd = 15  # Base wheel speeds
-        Ka = 15  # Turn speed
-        left  = int(Kd + Ka*angle)
-        right = int(Kd - Ka*angle)
-        
+        left, right = controller(label)
+        controller_angle = controller.angle
+
         bot.setVelocity(left, right)
 
-        cv2.imwrite(script_path+"/../data/"+args.folder+"/"+str(im_number).zfill(6)+'%.2f'%angle+".jpg", img) 
+        label_name = LABELS[label]
+        cv2.imwrite(
+            script_path
+            + "/../data/"
+            + args.folder
+            + "/"
+            + str(im_number).zfill(6)
+            + "_"
+            + label_name
+            + ".jpg",
+            img,
+        )
         im_number += 1
 
         time.sleep(0.1)  # Small delay to reduce CPU usage
