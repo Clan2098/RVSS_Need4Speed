@@ -17,7 +17,7 @@ class Controller:
         self.max_angle_abs = max_angle_abs
         self.max_wheel_speed = max_wheel_speed
         self.angle = 0.0
-        self.stop = False
+        self.stopped = False
         if label_to_angle is None:
             self.label_to_angle = LABEL_TO_ANGLE
         else:
@@ -25,14 +25,14 @@ class Controller:
 
     def stop(self):
         self.angle = 0.0
-        self.stop = True
+        self.stopped = True
 
     def start(self):
         self.angle = 0.0
-        self.stop = False
+        self.stopped = False
 
     def toggle_stop(self):
-        if self.stop:
+        if self.stopped:
             self.start()
         else:
             self.stop()
@@ -43,7 +43,7 @@ class Controller:
         return self.label_to_angle.get(label, 0.0)
 
     def __call__(self, label, left_enc=None, right_enc=None):
-        if self.stop:
+        if self.stopped:
             return 0, 0
 
         if label == 'uleft':
