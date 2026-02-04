@@ -46,14 +46,28 @@ class Controller:
         if self.stop:
             return 0, 0
 
-        target_angle = self._angle_from_label(label)
-        self.angle += self.angle_smoothing * (target_angle - self.angle)
-        self.angle = clamp_angle(self.angle, self.max_angle_abs)
-        base = self.base_speed
-        steer = self.turn_gain * self.angle
-        left = base + steer
-        right = base - steer
-        left, right = clamp_wheel_speeds(left, right, self.max_wheel_speed)
-        left = int(left)
-        right = int(right)
+        if label == 'uleft':
+            left = -1 * self.base_speed
+            right = self.base_speed
+            self.angle = -1
+        elif label == 'uright':
+            left = self.base_speed
+            right = -1 * self.base_speed
+            self.angle = 1
+        elif label == 'straight':
+            left = self.base_speed
+            right = self.base_speed
+            self.angle = 0
+        else:
+            target_angle = self._angle_from_label(label)
+            self.angle += self.angle_smoothing * (target_angle - self.angle)
+            self.angle = clamp_angle(self.angle, self.max_angle_abs)
+            base = self.base_speed
+            steer = self.turn_gain * self.angle
+            left = base + steer
+            right = base - steer
+            left, right = clamp_wheel_speeds(left, right, self.max_wheel_speed)
+            left = int(left)
+            right = int(right)
+
         return left, right
