@@ -40,11 +40,8 @@ class SteerDataSet(Dataset):
             img = self.transform(img)   
         
         steering = path.split(f)[-1].split(self.img_ext)[0][6:]
-        steering_cls = steering[1:]
+        steering = float(steering)       
 
-        steering_cls = label_to_class(steering_cls)
-        # steering = float(steering)       
-
-        # steering_cls = steering_to_class(steering)
+        steering_cls = steering_to_class(steering)
                       
         return img, steering_cls

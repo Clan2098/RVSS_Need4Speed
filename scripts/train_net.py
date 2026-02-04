@@ -59,12 +59,14 @@ script_path = os.path.dirname(os.path.realpath(__file__))
 full_ds = SteerDataSet(os.path.join(script_path, '..', 'data', 'train','string_label'), '.jpg', transform)
 print("The full dataset contains %d images " % len(full_ds))
 
-# Split dataset into train (80%) and validation (20%)
-train_size = int(0.8 * len(full_ds))
-val_size = len(full_ds) - train_size
-train_ds, val_ds = random_split(full_ds, [train_size, val_size])
+# Split dataset into train (60%), test (20%), and validation (20%)
+train_size = int(0.6 * len(full_ds))
+test_size = int(0.2 * len(full_ds))
+val_size = len(full_ds) - train_size - test_size
+train_ds, test_ds, val_ds = random_split(full_ds, [train_size, test_size, val_size])
 
 print(f"Train dataset: {len(train_ds)} images")
+print(f"Test dataset: {len(test_ds)} images")
 print(f"Validation dataset: {len(val_ds)} images")
 
 #data loader nicely batches images for the training process and shuffles (if desired)
@@ -90,6 +92,28 @@ example_ims, example_lbls = next(iter(trainloader))
 print(' '.join(f'{example_lbls[j]}' for j in range(len(example_lbls))))
 imshow(torchvision.utils.make_grid(example_ims))
 
+
+########################
+## Test dataset ##
+########################
+
+#data loader for test set
+testloader = DataLoader(test_ds, batch_size=1)
+all_y = []
+for S in testloader:
+    im, y = S    
+    all_y += y.tolist()
+
+print(f'Input to network shape: {im.shape}')
+
+#visualise the distribution of GT labels
+all_lbls, all_counts = np.unique(all_y, return_counts = True)
+plt.bar(all_lbls, all_counts, width = (all_lbls[1]-all_lbls[0])/2)
+plt.xlabel('Labels')
+plt.ylabel('Counts')
+plt.xticks(all_lbls)
+plt.title('Test Dataset')
+plt.show()
 
 ########################
 ## Validation dataset ##
@@ -155,7 +179,7 @@ net = Net()
 criterion = nn.CrossEntropyLoss()
 #You could use also ADAM
 # optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-optimizer = optim.Adam(net.parameters(), lr=0.001)
+optimizer = optim.Adam(net.parameters(), lr=0.0002)
 
 
 #######################################################################################################################################
@@ -164,7 +188,7 @@ optimizer = optim.Adam(net.parameters(), lr=0.001)
 losses = {'train': [], 'val': []}
 accs = {'train': [], 'val': []}
 best_acc = 0
-for epoch in range(25):  # loop over the dataset multiple times
+for epoch in range(50):  # loop over the dataset multiple times
 
     epoch_loss = 0.0
     correct = 0
