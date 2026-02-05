@@ -73,7 +73,7 @@ net = Net()
 stop_sign_detector = StopSignDetector()
 
 #LOAD NETWORK WEIGHTS HERE
-net.load_state_dict(torch.load('steer_net.pth'))
+net.load_state_dict(torch.load('working_845.pth'))
 
 #countdown before beginning
 print("Get ready...")
