@@ -22,7 +22,7 @@ class StopDataSet(Dataset):
     def __getitem__(self,idx):
         f = self.filenames[idx]        
         img = cv2.imread(f)[120:, :, :] # Crop the image to remove the car hood: only keep the bottom half
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # Conert to HSV color space
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # Convert to HSV color space
         
         if self.transform == None:
             img = self.totensor(img)
