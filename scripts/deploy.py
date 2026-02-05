@@ -60,7 +60,7 @@ class Net(nn.Module):
 net = Net()
 
 #LOAD NETWORK WEIGHTS HERE
-net.load_state_dict(torch.load('steer_net.pth'))
+net.load_state_dict(torch.load('working_845.pth'))
 
 #countdown before beginning
 print("Get ready...")
@@ -85,8 +85,6 @@ try:
                                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                                 ])
         img = transform(im) 
-
-
 
         #TO DO: pass image through network get a prediction
         outputs = net(img.unsqueeze(0)) # add batch dimension
