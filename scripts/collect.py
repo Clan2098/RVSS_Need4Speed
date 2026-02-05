@@ -4,13 +4,11 @@ import sys
 import os
 import cv2
 import numpy as np
-from pynput import keyboard
 import argparse
 from datetime import datetime
 
 from controller import Controller
-from steer_labels import LABELS, steering_to_class
-from steer_limits import clamp_angle
+from teleop import Teleop
 
 script_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.abspath(os.path.join(script_path, "../PenguinPi-robot/software/python/client/")))
@@ -22,10 +20,10 @@ parser.add_argument('--im_num', type = int, default = 0)
 parser.add_argument('--folder', type = str, default = 'train')
 args = parser.parse_args()
 
-if not os.path.exists(script_path+"/../data/"+args.folder):
-    data_path = script_path.replace('scripts', 'data')
-    print(f'Folder "{args.folder}" in path {data_path} does not exist. Please create it.')
-    exit()
+# if not os.path.exists(script_path+"/../data/"+args.folder):
+#     data_path = script_path.replace('scripts', 'data')
+#     print(f'Folder "{args.folder}" in path {data_path} does not exist. Please create it.')
+#     exit()
 
 bot = PiBot(ip=args.ip)
 
@@ -44,49 +42,22 @@ time.sleep(1)
 print("GO!")
 
 
-# Initialize variables
-angle = 0
-label = 3
 im_number = args.im_num
-write_images = False
-continue_running = True
 controller = Controller()
 
-def on_press(key):
-    global angle, label, continue_running, write_images
-    try:
-        if key == keyboard.Key.up:
-            angle = 0
-        elif key == keyboard.Key.down:
-            angle = 0
-        elif key == keyboard.Key.right:
-            angle += 0.1
-        elif key == keyboard.Key.left:
-            angle -= 0.1
-        elif key == keyboard.Key.space:
-            print("Toggle stop")
-            controller.toggle_stop()
-        elif key == keyboard.Key.esc:
-            print("Stopping script")
-            continue_running = False
-        elif key.char == 'c':
-            print("Toggle write images")
-            write_images = not write_images
-            if write_images:
-                print("Writing images to folder")
-            else:
-                print("Not writing images to folder")
+# Start in paused state
+controller.stopped = True
 
-        angle = clamp_angle(angle)
-        label = steering_to_class(angle)
+# Define what to do when an error occurs
+def on_error(_error):
+    bot.setVelocity(0, 0)
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        bot.setVelocity(0, 0)
+# Define what to do when the user toggles the pause
+def on_toggle_stop():
+    controller.toggle_stop()
 
-# Start the listener
-listener = keyboard.Listener(on_press=on_press)
-listener.start()
+teleop = Teleop(on_error, on_toggle_stop)
+teleop.start()
 
 # append datetime to folder name
 datetime_str = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -94,18 +65,18 @@ folder = args.folder + '/' + datetime_str
 os.makedirs(folder)
 
 try:
-    while continue_running:
+    while teleop.continue_running:
         # Get an image from the robot
         img = bot.getImage()
         
-        left, right = controller(label)
+        left, right = controller(teleop.label)
         controller_angle = controller.angle
-        print(left, right, angle, controller_accccccccccngle)
+        print(left, right, teleop.angle, controller_angle)
 
         bot.setVelocity(left, right)
 
-        if write_images:
-            filename = folder + '/' + str(im_number).zfill(6) + str(angle) + '.jpg'
+        if teleop.write_images:
+            filename = folder + '/' + str(im_number).zfill(6) + str(teleop.angle) + '.jpg'
             cv2.imwrite(filename, img)
         im_number += 1
 
@@ -113,10 +84,10 @@ try:
 
     # Clean up
     bot.setVelocity(0, 0)
-    listener.stop()
+    teleop.stop()
     print("Script ended")
 
 
 except KeyboardInterrupt:    
     bot.setVelocity(0, 0)
-    listener.stop()
+    teleop.stop()
