@@ -14,6 +14,8 @@ import torchvision.transforms as transforms
 script_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.abspath(os.path.join(script_path, "../PenguinPi-robot/software/python/client/")))
 from pibot_client import PiBot
+from steer_labels import LABELS, steering_to_class, label_to_class, LABEL_TO_ANGLE
+from controller import Controller
 
 from train_net import Net # TODO: should we change the name to avoid confusions?
 from train_stop import StopNet
@@ -42,30 +44,42 @@ args = parser.parse_args()
 
 bot = PiBot(ip=args.ip)
 
-# stop the robot
+controller = Controller()
+
+# stop the robot 
 bot.setVelocity(0, 0)
 
-# INITIALISE NETWORK HERE
-stop_net = StopNet()
-steering_net = Net()
+class Net(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.conv2 = nn.Conv2d(6, 16, 5)
 
-# LOAD NETWORK WEIGHTS HERE
-stop_net.load_state_dict(torch.load('stop_net.pth'))
-stop_net.eval()
+        self.pool = nn.MaxPool2d(2, 2)
 
-steering_net.load_state_dict(torch.load('steer_net.pth'))
-steering_net.eval()
+        self.fc1 = nn.Linear(1344, 256)
+        self.fc2 = nn.Linear(256, 5)
 
-# DEFINE ANY IMAGE TRANSFORMS HERE, they must be the same as those used during training
-transform = transforms.Compose([transforms.ToTensor(),
-                                transforms.Resize((40, 60)),
-                                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-                                ])
+        self.relu = nn.ReLU()
 
-# Configuration
-CONSECUTIVE_FRAMES_REQUIRED = 2  # Easy to adjust
-STOP_DURATION = 5.0  # seconds
-COOLDOWN_DURATION = 15.0  # seconds
+
+    def forward(self, x):
+        #extract features with convolutional layers
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
+        x = torch.flatten(x, 1) # flatten all dimensions except batch
+        
+        #linear layer for classification
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+       
+        return x
+    
+net = Net()
+
+#LOAD NETWORK WEIGHTS HERE
+net.load_state_dict(torch.load('steer_net.pth'))
 
 # Stop detection state
 consecutive_stop_count = 0
@@ -99,54 +113,36 @@ try:
         # Apply any necessary image transforms
         img_tensor = preprocess_image(img, transform)
 
-        # Check if we're in cooldown period
-        in_cooldown = (ignore_stop_until is not None and current_time < ignore_stop_until)
+        #TO DO: apply any necessary image transforms
+        transform = transforms.Compose([transforms.ToTensor(),
+                                transforms.Resize((40, 60)),
+                                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                                ])
+        img = transform(im) 
 
-        # Detect stop sign
-        stop_detected = False
 
-        # If in cooldown, skip stop detection
-        if not in_cooldown:
-            with torch.no_grad():
-                stop_output = stop_net(img_tensor)
-                stop_detected = (torch.max(stop_output, 1)[1].item() == 1) # torch.max looks for the maximum value along the specified dimension (in this case, dimension 1 which corresponds to the class scores) and returns both the maximum value and its index. The [1] is used to get the index of the maximum value, which corresponds to the predicted class. We then check if this predicted class index is equal to 1, which indicates that a stop sign is detected.
 
-            if stop_detected:
-                consecutive_stop_count += 1
-                print(f"Stop sign detected! Consecutive count: {consecutive_stop_count}")
-            else:
-                consecutive_stop_count = 0
+        #TO DO: pass image through network get a prediction
+        outputs = net(img.unsqueeze(0)) # add batch dimension
+        _, prediction = torch.max(outputs, 1)
 
-            # Trigger stop if threshold reached
-            if consecutive_stop_count >= CONSECUTIVE_FRAMES_REQUIRED and stop_start_time is None:
-                print(f"STOP SIGN DETECTED ({consecutive_stop_count} frames)! Stopping for {STOP_DURATION}s...")
-                stop_start_time = current_time
-                ignore_stop_until = current_time + COOLDOWN_DURATION
-                consecutive_stop_count = 0
-        
-            # Handle active stop
-            if stop_start_time is not None:
-                if current_time - stop_start_time < STOP_DURATION:
-                    bot.setVelocity(0, 0)
-                    continue
-                else:
-                    print("Resuming motion...")
-                    stop_start_time = None
-        
-        # Pass image through network get a steering prediction
-        with torch.no_grad():
-            steering_output = steering_net(img_tensor)
+        #TO DO: convert prediction into a meaningful steering angle
+        # angle = LABEL_TO_ANGLE[prediction.item()]
+
+        left,right = controller(prediction.item())
 
         #TODO: convert prediction into a meaningful steering angle
         
-        angle = 0
+        # angle = 0
 
-        Kd = 20 #base wheel speeds, increase to go faster, decrease to go slower
-        Ka = 20 #how fast to turn when given an angle
-        left  = int(Kd + Ka*angle)
-        right = int(Kd - Ka*angle)
+        # Kd = 20 #base wheel speeds, increase to go faster, decrease to go slower
+        # Ka = 20 #how fast to turn when given an angle
+        # left  = int(Kd + Ka*angle)
+        # right = int(Kd - Ka*angle)
             
         bot.setVelocity(left, right)
+        #bot.setVelocity(0, 0)
+        print(f"Predicted class: {prediction.item()}, controller_angle: {controller.angle:.2f}, left: {left}, right: {right}")
             
         
 except KeyboardInterrupt:    
