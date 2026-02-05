@@ -19,6 +19,9 @@ class stop_sign_detector:
         self.lower_red2 = np.array([160, 100, 100])
         self.upper_red2 = np.array([180, 255, 255])
 
+        self.lower_white = np.array([0, 0, 200])      # Any hue, low saturation, high brightness
+        self.upper_white = np.array([180, 50, 255]) 
+
         # YOLO setup
         self.use_yolo = use_yolo
         if use_yolo:
@@ -76,32 +79,33 @@ class stop_sign_detector:
         mask1 = cv2.inRange(hsv, self.lower_red1, self.upper_red1)
         mask2 = cv2.inRange(hsv, self.lower_red2, self.upper_red2)
         mask = cv2.bitwise_or(mask1, mask2)
+
+        # white_mask = cv2.inRange(hsv, self.lower_white, self.upper_white)
         
         # Apply morphological operations to clean up the mask
         kernel = np.ones((5, 5), np.uint8)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        # white_mask = cv2.morphologyEx(white_mask, cv2.MORPH_CLOSE, kernel)
         
         # Convert to machinevisiontoolbox Image only for blob detection
         mv_mask = Image(mask)
+        mv_white_mask = Image(mask)
 
         if np.any(mask):
             # Detect blobs in the mask
-            blobs = mv_mask.blobs()
+            blobs = mv_white_mask.blobs()
         else:
             blobs = []
             print("No red regions detected in mask")
-                
-        # # Detect blobs in the mask
-        # blobs = mv_mask.blobs()
         
         valid_blobs = []
         detected_signs = []
         for blob in blobs:
-            # # Filter by area
-            # if blob.area < 50 or blob.area > 10000:
-            #     print(f"Rejected blob with area: {blob.area}")
-            #     continue
+            # Filter by area
+            if blob.area < 50 or blob.area > 10000:
+                print(f"Rejected blob with area: {blob.area}")
+                continue
             
             # # Filter by circularity (octagons are ~0.85)
             # if blob.circularity < 0.70 or blob.circularity > 0.95:
@@ -125,7 +129,7 @@ class stop_sign_detector:
                 # Display the image FIRST, then plot blobs on it
                 mv_original.disp(title="Detected Signs", block=False)
                 for blob in valid_blobs:
-                    blob.plot_labelbox(color="yellow", linewidth=2)
+                    blob.plot_labelbox(color="red", linewidth=2)
         
         plt.show()
         plt.close('all') 
@@ -139,7 +143,7 @@ class stop_sign_detector:
             return self.detect_with_blobs(image, display_raw)
     
 if __name__ == "__main__":
-    detector = stop_sign_detector(use_yolo=True, yolo_model_path='yolov8n.pt')
+    detector = stop_sign_detector(use_yolo=False, yolo_model_path='yolov8n.pt')
     image_folder = "/home/arnaud/Documents/ETH/Master/Thesis/RVSS/RVSS_Need4Speed/data/train_stop/"
     image_paths = glob.glob(f"{image_folder}/*.jpg")
 
@@ -147,8 +151,3 @@ if __name__ == "__main__":
         test_image = cv2.imread(img_path)
         signs = detector.detect(test_image, display_raw=True)
         print(f"Image: {img_path} - Detected stop signs (x, y, radius):", signs)
-
-    # img_path = "/home/arnaud/Documents/ETH/Master/Thesis/RVSS/RVSS_Need4Speed/data/train_stop/000466-0.10.jpg"
-    # test_image = cv2.imread(img_path)
-    # signs = detector.detect(test_image, display_raw=True)
-    # print(f"Image: {img_path} - Detected stop signs (x, y, radius):", signs)
