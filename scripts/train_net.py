@@ -150,7 +150,7 @@ class Net(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
 
         self.fc1 = nn.Linear(1344, 256)
-        self.fc2 = nn.Linear(256, 7)
+        self.fc2 = nn.Linear(256, 5)
 
         self.relu = nn.ReLU()
 
@@ -178,8 +178,8 @@ net = Net()
 #for classification tasks
 criterion = nn.CrossEntropyLoss()
 #You could use also ADAM
-# optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-optimizer = optim.Adam(net.parameters(), lr=0.0001)
+#optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.Adam(net.parameters(), lr=0.0002)
 
 
 #######################################################################################################################################
@@ -188,7 +188,7 @@ optimizer = optim.Adam(net.parameters(), lr=0.0001)
 losses = {'train': [], 'val': []}
 accs = {'train': [], 'val': []}
 best_acc = 0
-for epoch in range(30):  # loop over the dataset multiple times
+for epoch in range(20):  # loop over the dataset multiple times
 
     epoch_loss = 0.0
     correct = 0
@@ -303,6 +303,26 @@ with torch.no_grad():
 
         actual += labels.tolist()
         predicted += predictions.tolist()
+
+        # # Display image with predicted and true labels
+        # img = images[0].numpy()
+        # img = np.transpose(img, (1, 2, 0))
+        # # Unnormalize the image
+        # img = img * 0.5 + 0.5
+        # img = np.clip(img, 0, 1)
+        # # Convert BGR to RGB
+        # img_rgb = img[:,:,::-1]
+        
+        # true_label = full_ds.class_labels[labels[0].item()]
+        # pred_label = full_ds.class_labels[predictions[0].item()]
+        # is_correct = "✓" if labels[0].item() == predictions[0].item() else "✗"
+        
+        # plt.figure(figsize=(6, 4))
+        # plt.imshow(img_rgb)
+        # plt.title(f'True: {true_label} | Predicted: {pred_label} {is_correct}')
+        # plt.axis('off')
+        # plt.tight_layout()
+        # plt.show()
 
         # collect the correct predictions for each class
         for label, prediction in zip(labels, predictions):
