@@ -150,7 +150,7 @@ class Net(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
 
         self.fc1 = nn.Linear(1344, 256)
-        self.fc2 = nn.Linear(256, 7)
+        self.fc2 = nn.Linear(256, 5)
 
         self.relu = nn.ReLU()
 
@@ -188,7 +188,7 @@ optimizer = optim.Adam(net.parameters(), lr=0.0001)
 losses = {'train': [], 'val': []}
 accs = {'train': [], 'val': []}
 best_acc = 0
-for epoch in range(30):  # loop over the dataset multiple times
+for epoch in range(40):  # loop over the dataset multiple times
 
     epoch_loss = 0.0
     correct = 0
