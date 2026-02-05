@@ -16,6 +16,7 @@ script_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.abspath(os.path.join(script_path, "../PenguinPi-robot/software/python/client/")))
 from pibot_client import PiBot
 from steer_labels import LABELS, steering_to_class, label_to_class, LABEL_TO_ANGLE
+from controller import Controller
 
 
 parser = argparse.ArgumentParser(description='PiBot client')
@@ -23,6 +24,8 @@ parser.add_argument('--ip', type=str, default='localhost', help='IP address of P
 args = parser.parse_args()
 
 bot = PiBot(ip=args.ip)
+
+controller = Controller()
 
 # stop the robot 
 bot.setVelocity(0, 0)
@@ -90,18 +93,22 @@ try:
         _, prediction = torch.max(outputs, 1)
 
         #TO DO: convert prediction into a meaningful steering angle
-        angle = LABEL_TO_ANGLE[prediction.item()]
+        # angle = LABEL_TO_ANGLE[prediction.item()]
+
+        left,right = controller(prediction.item())
 
         #TO DO: check for stop signs?
         
         # angle = 0
 
-        Kd = 20 #base wheel speeds, increase to go faster, decrease to go slower
-        Ka = 20 #how fast to turn when given an angle
-        left  = int(Kd + Ka*angle)
-        right = int(Kd - Ka*angle)
+        # Kd = 20 #base wheel speeds, increase to go faster, decrease to go slower
+        # Ka = 20 #how fast to turn when given an angle
+        # left  = int(Kd + Ka*angle)
+        # right = int(Kd - Ka*angle)
             
         bot.setVelocity(left, right)
+        #bot.setVelocity(0, 0)
+        print(f"Predicted class: {prediction.item()}, controller_angle: {controller.angle:.2f}, left: {left}, right: {right}")
             
         
 except KeyboardInterrupt:    

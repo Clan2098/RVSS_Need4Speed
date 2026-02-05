@@ -100,7 +100,7 @@ try:
         
         left, right = controller(label)
         controller_angle = controller.angle
-        print(left, right, angle, controller_angle)
+        print(left, right, angle, controller_accccccccccngle)
 
         bot.setVelocity(left, right)
 
