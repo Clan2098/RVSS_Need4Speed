@@ -59,26 +59,19 @@ def on_toggle_stop():
 teleop = Teleop(on_error, on_toggle_stop)
 teleop.start()
 
-# append datetime to folder name
-datetime_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-folder = args.folder + '/' + datetime_str
-os.makedirs(folder)
-
 try:
     while teleop.continue_running:
         # Get an image from the robot
         img = bot.getImage()
-        
+
+        # TODO: Pass image through stop net to predict stop sign
+
         left, right = controller(teleop.label)
         controller_angle = controller.angle
-        print(left, right, teleop.angle, controller_angle)
 
+        # TODO: Logic for controller if stop detected
+        
         bot.setVelocity(left, right)
-
-        if teleop.write_images:
-            filename = folder + '/' + str(im_number).zfill(6) + str(teleop.angle) + '.jpg'
-            cv2.imwrite(filename, img)
-        im_number += 1
 
         time.sleep(0.1)  # Small delay to reduce CPU usage
 
